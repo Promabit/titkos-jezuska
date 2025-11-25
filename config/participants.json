@@ -1,0 +1,32 @@
+{
+  "participants": [
+    {
+      "name": "Ádám",
+      "cannotPickNames": ["Kis Klau"]
+    },
+    {
+      "name": "Kis Klau",
+      "cannotPickNames": ["Ádám"]
+    },
+    {
+      "name": "Nagy Klau",
+      "cannotPickNames": ["János"]
+    },
+    {
+      "name": "János",
+      "cannotPickNames": ["Nagy Klau"]
+    },
+    {
+      "name": "Janesz",
+      "cannotPickNames": ["Noémi"]
+    },
+    {
+      "name": "Noémi",
+      "cannotPickNames": ["Janesz"]
+    },
+    {
+      "name": "Mari mama",
+      "cannotPickNames": []
+    }
+  ]
+}
