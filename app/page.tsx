@@ -114,7 +114,7 @@ export default function Home() {
         <div className="w-full max-w-2xl space-y-8 text-center">
           <div className="space-y-2">
             <h1 className="text-6xl font-bold text-white drop-shadow-lg">
-              👼 Titkos Jézuska Újratöltve! 🎄
+              👼 Titkos Jézuska Újratöltve!🔥 🎄
             </h1>
             <p className="text-xl text-red-100 drop-shadow">
               Pörgetesd meg a kereket, hogy megtudd, kinek ajándékozol!

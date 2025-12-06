@@ -1,133 +1,33 @@
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import os from 'os';
-import lockfile from 'proper-lockfile';
 import type { PicksData, Pick } from './types';
 
-export function getStoragePath(): string {
-  const projectRoot = process.cwd();
-  const hash = crypto
-    .createHash('md5')
-    .update(projectRoot)
-    .digest('hex')
-    .substring(0, 8);
-
-  return path.join(os.tmpdir(), `secret-santa-${hash}`, 'picks.json');
-}
-
-export function initializeStorage(): void {
-  const storagePath = getStoragePath();
-  const storageDir = path.dirname(storagePath);
-
-  if (!fs.existsSync(storageDir)) {
-    fs.mkdirSync(storageDir, { recursive: true });
-  }
-
-  if (!fs.existsSync(storagePath)) {
-    const initialData: PicksData = { picks: [] };
-    fs.writeFileSync(storagePath, JSON.stringify(initialData, null, 2), 'utf-8');
-  }
-}
+const inMemoryData: PicksData = { picks: [] };
 
 export function loadPicks(): PicksData {
-  const storagePath = getStoragePath();
-
-  try {
-    initializeStorage();
-
-    let release: (() => void) | null = null;
-    try {
-      release = lockfile.lockSync(storagePath);
-
-      const fileContents = fs.readFileSync(storagePath, 'utf-8');
-      const data: PicksData = JSON.parse(fileContents);
-
-      if (!data.picks || !Array.isArray(data.picks)) {
-        console.warn('Invalid picks data, reinitializing storage');
-        const initialData: PicksData = { picks: [] };
-        fs.writeFileSync(storagePath, JSON.stringify(initialData, null, 2), 'utf-8');
-        return initialData;
-      }
-
-      return data;
-    } finally {
-      if (release) {
-        release();
-      }
-    }
-  } catch (error) {
-    console.error('Error loading picks, reinitializing:', error);
-    const initialData: PicksData = { picks: [] };
-    fs.writeFileSync(storagePath, JSON.stringify(initialData, null, 2), 'utf-8');
-    return initialData;
-  }
+  return inMemoryData;
 }
 
 export function savePick(pick: Pick): void {
-  const storagePath = getStoragePath();
-  const storageDir = path.dirname(storagePath);
-
-  if (!fs.existsSync(storageDir)) {
-    fs.mkdirSync(storageDir, { recursive: true });
-  }
-
-  let release: (() => void) | null = null;
-  try {
-    release = lockfile.lockSync(storagePath);
-
-    const fileContents = fs.readFileSync(storagePath, 'utf-8');
-    const currentData: PicksData = JSON.parse(fileContents);
-    currentData.picks.push(pick);
-
-    const tempPath = `${storagePath}.tmp`;
-    fs.writeFileSync(tempPath, JSON.stringify(currentData, null, 2), 'utf-8');
-    fs.renameSync(tempPath, storagePath);
-  } finally {
-    if (release) {
-      release();
-    }
-  }
+  inMemoryData.picks.push(pick);
 }
 
 export function getPickForParticipant(name: string): Pick | null {
-  const data = loadPicks();
-  const pick = data.picks.find(p => p.giver === name);
+  const pick = inMemoryData.picks.find(p => p.giver === name);
   return pick || null;
 }
 
 export function getAllTakenReceivers(): string[] {
-  const data = loadPicks();
-  return data.picks.map(p => p.receiver);
+  return inMemoryData.picks.map(p => p.receiver);
 }
 
 export function getCompleteAssignment(): Record<string, string> | null {
-  const data = loadPicks();
-  return data.completeAssignment || null;
+  return inMemoryData.completeAssignment || null;
 }
 
 export function saveCompleteAssignment(assignment: Record<string, string>): void {
-  const storagePath = getStoragePath();
-  const storageDir = path.dirname(storagePath);
+  inMemoryData.completeAssignment = assignment;
+}
 
-  if (!fs.existsSync(storageDir)) {
-    fs.mkdirSync(storageDir, { recursive: true });
-  }
-
-  let release: (() => void) | null = null;
-  try {
-    release = lockfile.lockSync(storagePath);
-
-    const fileContents = fs.readFileSync(storagePath, 'utf-8');
-    const currentData: PicksData = JSON.parse(fileContents);
-    currentData.completeAssignment = assignment;
-
-    const tempPath = `${storagePath}.tmp`;
-    fs.writeFileSync(tempPath, JSON.stringify(currentData, null, 2), 'utf-8');
-    fs.renameSync(tempPath, storagePath);
-  } finally {
-    if (release) {
-      release();
-    }
-  }
+export function clearAllData(): void {
+  inMemoryData.picks = [];
+  delete inMemoryData.completeAssignment;
 }
