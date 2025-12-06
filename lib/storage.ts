@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import os from 'os';
+import lockfile from 'proper-lockfile';
 import type { PicksData, Pick } from './types';
 
 export function getStoragePath(): string {
@@ -35,17 +36,26 @@ export function loadPicks(): PicksData {
   try {
     initializeStorage();
 
-    const fileContents = fs.readFileSync(storagePath, 'utf-8');
-    const data: PicksData = JSON.parse(fileContents);
+    let release: (() => void) | null = null;
+    try {
+      release = lockfile.lockSync(storagePath);
 
-    if (!data.picks || !Array.isArray(data.picks)) {
-      console.warn('Invalid picks data, reinitializing storage');
-      const initialData: PicksData = { picks: [] };
-      fs.writeFileSync(storagePath, JSON.stringify(initialData, null, 2), 'utf-8');
-      return initialData;
+      const fileContents = fs.readFileSync(storagePath, 'utf-8');
+      const data: PicksData = JSON.parse(fileContents);
+
+      if (!data.picks || !Array.isArray(data.picks)) {
+        console.warn('Invalid picks data, reinitializing storage');
+        const initialData: PicksData = { picks: [] };
+        fs.writeFileSync(storagePath, JSON.stringify(initialData, null, 2), 'utf-8');
+        return initialData;
+      }
+
+      return data;
+    } finally {
+      if (release) {
+        release();
+      }
     }
-
-    return data;
   } catch (error) {
     console.error('Error loading picks, reinitializing:', error);
     const initialData: PicksData = { picks: [] };
@@ -62,12 +72,22 @@ export function savePick(pick: Pick): void {
     fs.mkdirSync(storageDir, { recursive: true });
   }
 
-  const currentData = loadPicks();
-  currentData.picks.push(pick);
+  let release: (() => void) | null = null;
+  try {
+    release = lockfile.lockSync(storagePath);
 
-  const tempPath = `${storagePath}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(currentData, null, 2), 'utf-8');
-  fs.renameSync(tempPath, storagePath);
+    const fileContents = fs.readFileSync(storagePath, 'utf-8');
+    const currentData: PicksData = JSON.parse(fileContents);
+    currentData.picks.push(pick);
+
+    const tempPath = `${storagePath}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(currentData, null, 2), 'utf-8');
+    fs.renameSync(tempPath, storagePath);
+  } finally {
+    if (release) {
+      release();
+    }
+  }
 }
 
 export function getPickForParticipant(name: string): Pick | null {
@@ -94,10 +114,20 @@ export function saveCompleteAssignment(assignment: Record<string, string>): void
     fs.mkdirSync(storageDir, { recursive: true });
   }
 
-  const currentData = loadPicks();
-  currentData.completeAssignment = assignment;
+  let release: (() => void) | null = null;
+  try {
+    release = lockfile.lockSync(storagePath);
 
-  const tempPath = `${storagePath}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(currentData, null, 2), 'utf-8');
-  fs.renameSync(tempPath, storagePath);
+    const fileContents = fs.readFileSync(storagePath, 'utf-8');
+    const currentData: PicksData = JSON.parse(fileContents);
+    currentData.completeAssignment = assignment;
+
+    const tempPath = `${storagePath}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(currentData, null, 2), 'utf-8');
+    fs.renameSync(tempPath, storagePath);
+  } finally {
+    if (release) {
+      release();
+    }
+  }
 }

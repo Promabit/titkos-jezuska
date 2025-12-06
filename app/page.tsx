@@ -1,45 +1,47 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [allParticipants, setAllParticipants] = useState<string[]>([]);
   const [whoSpun, setWhoSpun] = useState<string[]>([]);
-  const [selectedName, setSelectedName] = useState('');
+  const [selectedName, setSelectedName] = useState("");
   const [existingPick, setExistingPick] = useState<string | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [pickedName, setPickedName] = useState('');
-  const [error, setError] = useState('');
+  const [pickedName, setPickedName] = useState("");
+  const [error, setError] = useState("");
   const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/participants').then(res => res.json()),
-      fetch('/api/who-spun').then(res => res.json())
+      fetch("/api/participants").then((res) => res.json()),
+      fetch("/api/who-spun").then((res) => res.json()),
     ])
       .then(([participantsData, whoSpunData]) => {
         setAllParticipants(participantsData.participants);
         setWhoSpun(whoSpunData.whoSpun || []);
       })
-      .catch(err => {
-        console.error('Error loading data:', err);
-        setError('Nem sikerült betölteni az adatokat');
+      .catch((err) => {
+        console.error("Error loading data:", err);
+        setError("Nem sikerült betölteni az adatokat");
       });
   }, []);
 
-  const availableParticipants = allParticipants.filter(name => !whoSpun.includes(name));
+  const availableParticipants = allParticipants.filter(
+    (name) => !whoSpun.includes(name),
+  );
 
   useEffect(() => {
     if (!selectedName) {
       setExistingPick(null);
-      setPickedName('');
-      setError('');
+      setPickedName("");
+      setError("");
       return;
     }
 
     fetch(`/api/my-pick?name=${encodeURIComponent(selectedName)}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.hasPicked) {
           setExistingPick(data.receiver);
           setPickedName(data.receiver);
@@ -47,33 +49,33 @@ export default function Home() {
           setExistingPick(null);
         }
       })
-      .catch(err => console.error('Error checking existing pick:', err));
+      .catch((err) => console.error("Error checking existing pick:", err));
   }, [selectedName]);
 
   const handleSpin = async () => {
     if (!selectedName) {
-      alert('Kérlek, válaszd ki a neved először!');
+      alert("Kérlek, válaszd ki a neved először!");
       return;
     }
 
     if (existingPick) {
-      alert('Már pörgetettél! Nem változtathatod meg a választásod.');
+      alert("Már pörgetettél! Nem változtathatod meg a választásod.");
       return;
     }
 
     setIsSpinning(true);
-    setPickedName('');
-    setError('');
+    setPickedName("");
+    setError("");
 
     const spins = 5 + Math.random() * 3;
-    const newRotation = rotation + (spins * 360);
+    const newRotation = rotation + spins * 360;
     setRotation(newRotation);
 
     try {
-      const response = await fetch('/api/spin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ participantName: selectedName })
+      const response = await fetch("/api/spin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantName: selectedName }),
       });
 
       const data = await response.json();
@@ -82,7 +84,7 @@ export default function Home() {
         if (data.success) {
           setPickedName(data.receiver);
           setExistingPick(data.receiver);
-          setWhoSpun(prev => [...prev, selectedName]);
+          setWhoSpun((prev) => [...prev, selectedName]);
         } else {
           setError(data.error);
         }
@@ -90,7 +92,7 @@ export default function Home() {
       }, 3000);
     } catch (err) {
       setTimeout(() => {
-        setError('Hiba történt a pörgetés során');
+        setError("Hiba történt a pörgetés során");
         setIsSpinning(false);
       }, 3000);
     }
@@ -112,7 +114,7 @@ export default function Home() {
         <div className="w-full max-w-2xl space-y-8 text-center">
           <div className="space-y-2">
             <h1 className="text-6xl font-bold text-white drop-shadow-lg">
-              👼 Titkos Jézuska 🎄
+              👼 Titkos Jézuska Újratöltve! 🎄
             </h1>
             <p className="text-xl text-red-100 drop-shadow">
               Pörgetesd meg a kereket, hogy megtudd, kinek ajándékozol!
@@ -123,16 +125,17 @@ export default function Home() {
             <div className="space-y-6">
               {existingPick ? (
                 <div className="text-center space-y-2">
-                  <p className="text-lg font-semibold text-red-800">
-                    Te vagy:
-                  </p>
+                  <p className="text-lg font-semibold text-red-800">Te vagy:</p>
                   <p className="text-3xl font-bold text-red-700">
                     {selectedName}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <label htmlFor="name-select" className="block text-lg font-semibold text-red-800">
+                  <label
+                    htmlFor="name-select"
+                    className="block text-lg font-semibold text-red-800"
+                  >
                     Válaszd ki a neved
                   </label>
                   <select
@@ -160,7 +163,7 @@ export default function Home() {
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 via-green-500 to-red-600 shadow-2xl">
                     <div className="absolute inset-2 rounded-full bg-white flex items-center justify-center">
                       <span className="text-6xl">
-                        {isSpinning ? '🎁' : pickedName ? '✨' : '👼'}
+                        {isSpinning ? "🎁" : pickedName ? "✨" : "👼"}
                       </span>
                     </div>
                   </div>
@@ -176,18 +179,14 @@ export default function Home() {
                   disabled={isSpinning || !selectedName}
                   className="w-full rounded-xl bg-gradient-to-r from-red-600 to-green-600 px-8 py-4 text-xl font-bold text-white shadow-lg transition-all hover:from-red-700 hover:to-green-700 hover:shadow-xl disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed"
                 >
-                  {isSpinning ? 'Pörgetés... 🎄' : 'Pörgesd meg a kereket! 👼'}
+                  {isSpinning ? "Pörgetés... 🎄" : "Pörgesd meg a kereket! 👼"}
                 </button>
               )}
 
               {error && !isSpinning && (
                 <div className="space-y-2 rounded-xl bg-red-100 p-6 shadow-inner">
-                  <p className="text-lg font-semibold text-red-800">
-                    ⚠️ Hiba
-                  </p>
-                  <p className="text-base text-red-700">
-                    {error}
-                  </p>
+                  <p className="text-lg font-semibold text-red-800">⚠️ Hiba</p>
+                  <p className="text-base text-red-700">{error}</p>
                 </div>
               )}
 
@@ -199,9 +198,7 @@ export default function Home() {
                   <p className="text-4xl font-bold text-red-700">
                     {pickedName}
                   </p>
-                  <p className="text-sm text-gray-600">
-                    Tartsd titokban! 🤫
-                  </p>
+                  <p className="text-sm text-gray-600">Tartsd titokban! 🤫</p>
                 </div>
               )}
             </div>
