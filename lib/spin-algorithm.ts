@@ -1,14 +1,14 @@
-import { isValidParticipant } from './config';
-import { getPickForParticipant, savePick, getCompleteAssignment, saveCompleteAssignment } from './storage';
-import { generateCompleteAssignment } from './assignment-algorithm';
-import type { SpinResponse, Pick } from './types';
+import { BUILD_TIME_ASSIGNMENT } from "./assignment-algorithm";
+import { isValidParticipant } from "./config";
+import { getPickForParticipant, savePick } from "./storage";
+import type { Pick, SpinResponse } from "./types";
 
 export function performSpin(participantName: string): SpinResponse {
   if (!isValidParticipant(participantName)) {
     return {
       success: false,
-      error: 'Érvénytelen résztvevő név',
-      errorCode: 'INVALID_PARTICIPANT'
+      error: "Érvénytelen résztvevő név",
+      errorCode: "INVALID_PARTICIPANT",
     };
   }
 
@@ -17,48 +17,23 @@ export function performSpin(participantName: string): SpinResponse {
     return {
       success: false,
       error: `Már pörgetett! A kiválasztott személy: ${existingPick.receiver}`,
-      errorCode: 'ALREADY_PICKED',
-      receiver: existingPick.receiver
+      errorCode: "ALREADY_PICKED",
+      receiver: existingPick.receiver,
     };
   }
 
-  let assignment = getCompleteAssignment();
-
-  if (!assignment) {
-    assignment = generateCompleteAssignment();
-
-    if (!assignment) {
-      return {
-        success: false,
-        error: 'Nem sikerült érvényes hozzárendelést generálni a megadott kizárási szabályokkal',
-        errorCode: 'INVALID_EXCLUSIONS'
-      };
-    }
-
-    saveCompleteAssignment(assignment);
-  }
-
-  const receiver = assignment[participantName];
-
-  if (!receiver) {
-    return {
-      success: false,
-      error: 'Hiba történt a hozzárendelés betöltésekor',
-      errorCode: 'INVALID_PARTICIPANT'
-    };
-  }
+  const receiver = BUILD_TIME_ASSIGNMENT[participantName];
 
   const pick: Pick = {
     giver: participantName,
     receiver: receiver,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   savePick(pick);
 
   return {
     success: true,
-    receiver: receiver
+    receiver: receiver,
   };
 }
-

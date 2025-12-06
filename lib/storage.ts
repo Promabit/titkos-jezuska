@@ -1,4 +1,5 @@
-import type { PicksData, Pick } from './types';
+import { BUILD_TIME_ASSIGNMENT } from "./assignment-algorithm";
+import type { PicksData, Pick } from "./types";
 
 const inMemoryData: PicksData = { picks: [] };
 
@@ -11,19 +12,21 @@ export function savePick(pick: Pick): void {
 }
 
 export function getPickForParticipant(name: string): Pick | null {
-  const pick = inMemoryData.picks.find(p => p.giver === name);
+  const pick = inMemoryData.picks.find((p) => p.giver === name);
   return pick || null;
 }
 
 export function getAllTakenReceivers(): string[] {
-  return inMemoryData.picks.map(p => p.receiver);
+  return inMemoryData.picks.map((p) => p.receiver);
 }
 
-export function getCompleteAssignment(): Record<string, string> | null {
-  return inMemoryData.completeAssignment || null;
+export function getCompleteAssignment(): Record<string, string> {
+  return BUILD_TIME_ASSIGNMENT;
 }
 
-export function saveCompleteAssignment(assignment: Record<string, string>): void {
+export function saveCompleteAssignment(
+  assignment: Record<string, string>,
+): void {
   inMemoryData.completeAssignment = assignment;
 }
 

@@ -1,27 +1,15 @@
-import { getParticipantNames, getExclusions } from './config';
+import { getParticipantNames, getExclusions } from "./config";
 
-export function generateCompleteAssignment(): Record<string, string> | null {
-  const participants = getParticipantNames();
-  const maxAttempts = 1000;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const assignment = tryGenerateAssignment(participants);
-    if (assignment) {
-      return assignment;
-    }
-  }
-
-  return null;
-}
-
-function tryGenerateAssignment(participants: string[]): Record<string, string> | null {
+function tryGenerateAssignment(
+  participants: string[],
+): Record<string, string> | null {
   const shuffled = [...participants].sort(() => Math.random() - 0.5);
   const assignment: Record<string, string> = {};
   const taken = new Set<string>();
 
   for (const giver of shuffled) {
     const exclusions = getExclusions(giver);
-    const available = participants.filter(receiver => {
+    const available = participants.filter((receiver) => {
       if (receiver === giver) return false;
       if (exclusions.includes(receiver)) return false;
       if (taken.has(receiver)) return false;
@@ -42,22 +30,26 @@ function tryGenerateAssignment(participants: string[]): Record<string, string> |
   return assignment;
 }
 
-export function isValidAssignment(assignment: Record<string, string>): boolean {
+function generateAssignmentAtBuildTime(): Record<string, string> {
   const participants = getParticipantNames();
-  const receivers = new Set<string>();
+  const maxAttempts = 1000;
 
-  for (const giver of participants) {
-    const receiver = assignment[giver];
-
-    if (!receiver) return false;
-    if (giver === receiver) return false;
-
-    const exclusions = getExclusions(giver);
-    if (exclusions.includes(receiver)) return false;
-
-    if (receivers.has(receiver)) return false;
-    receivers.add(receiver);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const assignment = tryGenerateAssignment(participants);
+    if (assignment) {
+      return assignment;
+    }
   }
 
-  return receivers.size === participants.length;
+  throw new Error("Failed to generate valid assignment after 1000 attempts");
 }
+
+export const BUILD_TIME_ASSIGNMENT: any = {
+  Ádám: "János",
+  János: "Mari mama",
+  "Mari mama": "Ádám",
+  "Nagy Klau": "Noémi",
+  "Kis Klau": "Janesz",
+  Janesz: "Kis Klau",
+  Noémi: "Nagy Klau",
+};
